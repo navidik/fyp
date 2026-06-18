@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Evaluate Whisper transcription accuracy with WER/CER and speaker diarization with DER.">
+    <title>Model Accuracy Evaluation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="page-glow page-glow-left"></div>
+        <div class="page-glow page-glow-right"></div>
+
+        <div class="container accuracy-container">
+            <header class="hero">
+                <div class="hero-copy">
+                    <p class="eyebrow">Model Accuracy Evaluation</p>
+                    <h1 class="app-title">Measure transcription quality with WER and CER, then benchmark diarization quality with DER.</h1>
+                    <p class="app-subtitle">
+                        Evaluate transcription accuracy using WER/CER and speaker diarization accuracy using DER.
+                    </p>
+                    <div class="hero-pills">
+                        <span class="pill">Single-file WER</span>
+                        <span class="pill">Bulk WER for 100+ files</span>
+                        <span class="pill">CALLHOME DER benchmark</span>
+                    </div>
+                </div>
+
+                <aside class="hero-panel">
+                    <div class="hero-panel-card">
+                        <p class="panel-label">Evaluation Scope</p>
+                        <div class="panel-grid">
+                            <div>
+                                <span class="panel-value">WER / CER</span>
+                                <span class="panel-key">transcription quality</span>
+                            </div>
+                            <div>
+                                <span class="panel-value">DER</span>
+                                <span class="panel-key">speaker diarization quality</span>
+                            </div>
+                            <div>
+                                <span class="panel-value">CSV reports</span>
+                                <span class="panel-key">exportable outputs</span>
+                            </div>
+                            <div>
+                                <span class="panel-value">CALLHOME</span>
+                                <span class="panel-key">ground-truth dataset</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </header>
+
+            {% if page_errors %}
+            <section class="error-box">
+                <strong>Evaluation errors</strong>
+                {% for error in page_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <main class="main-content">
+                <section class="evaluation-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-kicker">Section 1</p>
+                            <h2>Single File WER Evaluation</h2>
+                        </div>
+                        <a href="/" class="accuracy-btn secondary">Back to Transcription</a>
+                    </div>
+
+                    <form method="post" action="{{ url_for('evaluate_wer_route') }}" enctype="multipart/form-data" class="upload-box accuracy-form" data-evaluation-form>
+                        <div class="accuracy-input-grid">
+                            <div class="option-group">
+                                <label for="audio_file">Upload audio file</label>
+                                <input id="audio_file" type="file" name="audio_file" accept=".wav,.mp3,.m4a,.flac" required>
+                            </div>
+                            <div class="option-group">
+                                <label for="reference_file">Upload manual transcript text file</label>
+                                <input id="reference_file" type="file" name="reference_file" accept=".txt" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="upload-btn" data-loading-button>Calculate Single WER Accuracy</button>
+                            <p class="loading-message" hidden>Evaluation is running. This may take time for large files.</p>
+                        </div>
+                    </form>
+
+                    {% if single_wer_result %}
+                    <div class="result-box">
+                        <div class="success-box">WER Evaluation Result</div>
+                        <div class="result-grid">
+                            <div class="metric-card">
+                                <span class="metric-value error-rate">{{ single_wer_result.wer }}%</span>
+                                <span class="metric-label">WER</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value error-rate">{{ single_wer_result.cer }}%</span>
+                                <span class="metric-label">CER</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value success-rate">{{ single_wer_result.transcription_accuracy }}%</span>
+                                <span class="metric-label">Transcription Accuracy</span>
+                            </div>
+                        </div>
+
+                        <div class="preview-grid">
+                            <div class="preview-card">
+                                <h3>Reference Transcript Preview</h3>
+                                <p>{{ single_wer_result.reference_text }}</p>
+                            </div>
+                            <div class="preview-card">
+                                <h3>System Transcript Preview</h3>
+                                <p>{{ single_wer_result.system_text }}</p>
+                            </div>
+                        </div>
+
+                        {% if single_wer_result.output_transcript_path %}
+                        <a class="accuracy-btn" href="{{ url_for('evaluation_download', path=single_wer_result.output_transcript_path) }}">Download Generated System Transcript</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </section>
+
+                <section class="evaluation-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-kicker">Section 2</p>
+                            <h2>Bulk Folder WER Evaluation</h2>
+                        </div>
+                        <p class="section-note">Upload audio and transcript folders or use normal multi-file selection.</p>
+                    </div>
+
+                    <form method="post" action="{{ url_for('evaluate_wer_folder_route') }}" enctype="multipart/form-data" class="upload-box accuracy-form" data-evaluation-form data-bulk-wer-form>
+                        <div class="accuracy-input-grid">
+                            <div class="option-group">
+                                <label for="audio_files">Upload audio folder or files</label>
+                                <input id="audio_files" type="file" name="audio_files" accept=".wav,.mp3,.m4a,.flac" webkitdirectory directory multiple required>
+                            </div>
+                            <div class="option-group">
+                                <label for="transcript_files">Upload transcript folder or files</label>
+                                <input id="transcript_files" type="file" name="transcript_files" accept=".txt" webkitdirectory directory multiple required>
+                            </div>
+                        </div>
+                        <p class="form-hint">If folder upload is not supported in your browser, use multi-select files with matching base filenames.</p>
+                        <div class="form-actions">
+                            <button type="submit" class="upload-btn" data-loading-button>Calculate Bulk WER Accuracy</button>
+                            <p class="loading-message" hidden>Evaluation is running. This may take time for large files.</p>
+                        </div>
+                        <div id="bulkWerInlineProgress" class="inline-progress-panel" hidden>
+                            <div class="progress-bar bulk-progress-bar inline-progress-bar">
+                                <div id="bulkWerProgressFill" class="progress-fill"></div>
+                            </div>
+                            <div class="progress-meta bulk-progress-meta inline-progress-meta">
+                                <p id="bulkWerProgressText" class="progress-text">0% - Waiting to start</p>
+                                <p id="bulkWerProgressCount" class="status-message">0 / 0 files processed</p>
+                            </div>
+                            <p id="bulkWerCurrentFile" class="status-message inline-progress-file">Current file: none</p>
+                        </div>
+                    </form>
+
+                    <div id="bulkWerDynamicErrors" class="error-box" hidden>
+                        <strong>Evaluation errors</strong>
+                        <div id="bulkWerDynamicErrorsBody"></div>
+                    </div>
+
+                    <div id="bulkWerDynamicResults" hidden></div>
+
+                    {% if bulk_wer_result %}
+                    <div class="result-box">
+                        <div class="success-box">Bulk WER Evaluation Result</div>
+                        <div class="result-grid">
+                            <div class="metric-card">
+                                <span class="metric-value">{{ bulk_wer_result.total_files }}</span>
+                                <span class="metric-label">Total Files</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value success-rate">{{ bulk_wer_result.successful_files }}</span>
+                                <span class="metric-label">Successful Files</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value error-rate">{{ bulk_wer_result.failed_files }}</span>
+                                <span class="metric-label">Failed Files</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value error-rate">{{ bulk_wer_result.average_wer }}%</span>
+                                <span class="metric-label">Average WER</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value error-rate">{{ bulk_wer_result.average_cer }}%</span>
+                                <span class="metric-label">Average CER</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value success-rate">{{ bulk_wer_result.average_transcription_accuracy }}%</span>
+                                <span class="metric-label">Average Transcription Accuracy</span>
+                            </div>
+                        </div>
+
+                        {% if bulk_wer_result.report_csv_path %}
+                        <a class="accuracy-btn" href="{{ url_for('evaluation_download', path=bulk_wer_result.report_csv_path) }}">Download WER CSV Report</a>
+                        {% endif %}
+
+                        <div class="table-wrap">
+                            <table class="result-table">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>WER %</th>
+                                        <th>CER %</th>
+                                        <th>Transcription Accuracy %</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in bulk_wer_result.file_results %}
+                                    <tr>
+                                        <td>{{ item.file_name }}</td>
+                                        <td>{{ item.wer }}</td>
+                                        <td>{{ item.cer }}</td>
+                                        <td>{{ item.transcription_accuracy }}</td>
+                                        <td>{{ item.status }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </section>
+
+                <section class="evaluation-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-kicker">Section 3</p>
+                            <h2>DER Evaluation using CALLHOME Dataset</h2>
+                        </div>
+                        <p class="section-note">Default sample count is 3. Increase only if dataset access and processing time are acceptable.</p>
+                    </div>
+
+                    <form method="post" action="{{ url_for('evaluate_der_route') }}" class="upload-box accuracy-form" data-evaluation-form>
+                        <div class="accuracy-input-grid single-column">
+                            <div class="option-group">
+                                <label for="num_samples">Number of CALLHOME samples to test</label>
+                                <input id="num_samples" type="number" name="num_samples" min="1" value="3" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="upload-btn" data-loading-button>Calculate DER Accuracy</button>
+                            <p class="loading-message" hidden>Evaluation is running. This may take time for large files.</p>
+                        </div>
+                    </form>
+
+                    {% if der_result %}
+                    <div class="result-box">
+                        <div class="success-box">DER Evaluation Result</div>
+                        <div class="result-grid">
+                            <div class="metric-card">
+                                <span class="metric-value error-rate">{{ der_result.average_der }}%</span>
+                                <span class="metric-label">Average DER</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value success-rate">{{ der_result.diarization_accuracy }}%</span>
+                                <span class="metric-label">Diarization Accuracy</span>
+                            </div>
+                        </div>
+
+                        {% if der_result.report_csv_path %}
+                        <a class="accuracy-btn" href="{{ url_for('evaluation_download', path=der_result.report_csv_path) }}">Download DER CSV Report</a>
+                        {% endif %}
+
+                        <div class="table-wrap">
+                            <table class="result-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sample ID</th>
+                                        <th>Duration</th>
+                                        <th>Number of Speakers</th>
+                                        <th>DER %</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in der_result.sample_results %}
+                                    <tr>
+                                        <td>{{ item.sample_id }}</td>
+                                        <td>{{ item.duration }}</td>
+                                        <td>{{ item.num_speakers }}</td>
+                                        <td>{{ item.der }}</td>
+                                        <td>{{ item.status }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

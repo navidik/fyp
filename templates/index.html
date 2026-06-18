@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Upload meeting audio, choose a Whisper model, and generate speaker-labeled transcripts.">
+    <title>Meeting Transcript Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="page-glow page-glow-left"></div>
+        <div class="page-glow page-glow-right"></div>
+
+        <div class="container">
+            <header class="hero">
+                <div class="hero-copy">
+                    <p class="eyebrow">Meeting Transcript Studio</p>
+                    <h1 class="app-title">Upload audio, pick a Whisper model, and get a clean speaker-aware transcript.</h1>
+                    <p class="app-subtitle">
+                        Built for long-form meeting recordings with Whisper transcription, speaker diarization, and downloadable transcript output.
+                    </p>
+
+                    <div class="hero-pills">
+                        <span class="pill">Whisper model selection</span>
+                        <span class="pill">Speaker diarization</span>
+                        <span class="pill">TXT export</span>
+                    </div>
+                <img
+                    src="/static/images/image.png"
+                    alt="Whisper-Based Multi-Speaker Meeting Transcription System logo"
+                    class="hero-logo">
+                </div>
+                
+                <aside class="hero-panel">
+                    <div class="hero-panel-card">
+                        <p class="panel-label">Quick facts</p>
+                        <div class="panel-grid">
+                            <div>
+                                <span class="panel-value">500MB</span>
+                                <span class="panel-key">file limit</span>
+                            </div>
+                            <div>
+                                <span class="panel-value">5</span>
+                                <span class="panel-key">Whisper models</span>
+                            </div>
+                            <div>
+                                <span class="panel-value">CPU / CUDA</span>
+                                <span class="panel-key">runtime target</span>
+                            </div>
+                            <div>
+                                <span class="panel-value">WAV MP3 M4A FLAC OGG</span>
+                                <span class="panel-key">supported audio</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </header>
+
+            <main class="main-content">
+                <section class="upload-section" id="uploadSection">
+                    <div class="panel upload-panel">
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-kicker">Step 1</p>
+                                <h2>Start a transcription run</h2>
+                            </div>
+                            <p class="section-note">Choose a model, select a device, and upload one meeting recording.</p>
+                        </div>
+
+                        <form id="uploadForm" class="upload-form">
+                            <div class="processing-options">
+                                <div class="option-group">
+                                    <label for="modelSelect">Whisper model</label>
+                                    <select id="modelSelect" name="model">
+                                        <option value="tiny">tiny · fastest</option>
+                                        <option value="base" selected>base · balanced</option>
+                                        <option value="small">small · better accuracy</option>
+                                        <option value="medium">medium · high accuracy</option>
+                                        <option value="large">large · best accuracy</option>
+                                    </select>
+                                </div>
+                                <div class="option-group">
+                                    <label for="deviceSelect">Processing device</label>
+                                    <select id="deviceSelect" name="device">
+                                        <option value="cpu" selected>CPU</option>
+                                        <option value="cuda">GPU (CUDA)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Upload audio file">
+                                <div class="drop-zone-icon-wrap">
+                                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                        <path d="M12 16V4"></path>
+                                        <path d="M7 9l5-5 5 5"></path>
+                                        <path d="M4 17v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1"></path>
+                                    </svg>
+                                </div>
+                                <p class="drop-title">Drop your meeting audio here</p>
+                                <p class="drop-subtitle">or click to browse from your device</p>
+                                <p class="drop-meta">Accepted: WAV, MP3, M4A, FLAC, OGG</p>
+                            </div>
+
+                            <input type="file" id="fileInput" name="file" accept=".wav,.mp3,.m4a,.flac,.ogg" hidden>
+
+                            <div id="fileInfo" class="file-info" hidden>
+                                <div class="file-chip">
+                                    <span class="file-chip-label">Selected file</span>
+                                    <strong id="selectedFileName">No file selected</strong>
+                                </div>
+                                <div class="file-chip">
+                                    <span class="file-chip-label">Size</span>
+                                    <strong id="selectedFileSize">0 MB</strong>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="upload-btn" id="uploadBtn" disabled>Process audio</button>
+                                <a href="/accuracy" class="accuracy-btn">Check Accuracy of Model</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="status-section" id="statusSection" hidden>
+                    <div class="panel status-panel">
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-kicker">Step 2</p>
+                                <h2>Processing</h2>
+                            </div>
+                            <div class="run-badges">
+                                <span class="run-badge" id="activeModelBadge">Model: base</span>
+                                <span class="run-badge" id="activeDeviceBadge">Device: CPU</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-meta">
+                                <p class="progress-text" id="progressText">0% - Waiting to start</p>
+                                <p class="status-message" id="statusMessage">Upload a file to begin.</p>
+                            </div>
+                        </div>
+
+                        <div class="processing-steps">
+                            <div class="step" id="step-upload">
+                                <span class="step-label">Upload</span>
+                                <span class="step-copy">Store the file</span>
+                            </div>
+                            <div class="step" id="step-whisper">
+                                <span class="step-label">Whisper</span>
+                                <span class="step-copy">Run transcription</span>
+                            </div>
+                            <div class="step" id="step-diarization">
+                                <span class="step-label">Speakers</span>
+                                <span class="step-copy">Detect speakers</span>
+                            </div>
+                            <div class="step" id="step-merge">
+                                <span class="step-label">Compose</span>
+                                <span class="step-copy">Build transcript</span>
+                            </div>
+                        </div>
+
+                        <div id="errorMessage" class="error-message" hidden>
+                            <strong>Request failed</strong>
+                            <p id="errorText"></p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="transcript-section" id="transcriptSection" hidden>
+                    <div class="panel transcript-panel">
+                        <div class="transcript-header">
+                            <div>
+                                <p class="section-kicker">Step 3</p>
+                                <h2>Transcript</h2>
+                            </div>
+                            <div class="transcript-controls">
+                                <button class="control-btn" id="copyBtn" type="button">Copy</button>
+                                <button class="control-btn" id="clearBtn" type="button">Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="transcript-summary" id="transcriptSummary">
+                            <div class="summary-card">
+                                <span class="summary-label">Entries</span>
+                                <strong class="summary-value" id="summaryEntries">0</strong>
+                            </div>
+                            <div class="summary-card">
+                                <span class="summary-label">Model used</span>
+                                <strong class="summary-value" id="summaryModel">base</strong>
+                            </div>
+                            <div class="summary-card">
+                                <span class="summary-label">Device used</span>
+                                <strong class="summary-value" id="summaryDevice">CPU</strong>
+                            </div>
+                        </div>
+
+                        <div class="transcript-content" id="transcriptContent"></div>
+
+                        <div class="download-section">
+                            <div>
+                                <h3>Download</h3>
+                                <p class="download-note">TXT and PDF exports are available now.</p>
+                            </div>
+                            <div class="download-buttons">
+                                <button class="download-btn txt-btn" id="downloadTxt" type="button">Download TXT</button>
+                                <button class="download-btn pdf-btn" id="downloadPdf" type="button">Download PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="footer">
+                <p>Whisper-Based Multi-Speaker Meeting Transcription System with Speaker Diarization</p>
+                <p><small>Faculty Of  Engineering | South Eastern University of Sri Lanka</small></p>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

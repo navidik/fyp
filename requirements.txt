@@ -1,0 +1,72 @@
+
+# Whisper-Based Multi-Speaker Meeting Transcription System - Python Dependencies
+
+# This file lists all required Python packages for the project
+# 
+# PURPOSE OF EACH PACKAGE:
+# - Flask: Web framework for serving the web interface and handling uploads
+# - openai-whisper: OpenAI's speech recognition model for audio transcription
+# - pyannote.audio: Speaker diarization model to identify multiple speakers
+# - torch: PyTorch deep learning framework (required by Whisper & Pyannote)
+# - torchaudio: Audio processing library for PyTorch
+# - pydub: Audio format conversion (MP3, WAV, M4A support)
+# - librosa: Audio analysis library for processing audio files
+# - soundfile: Read/write audio files in different formats
+# - reportlab: Generate PDF files for transcript exports
+# - python-docx: Generate DOCX files (optional)
+# - numpy: Numerical computing library (dependency for ML models)
+# - scipy: Scientific computing (audio processing utilities)
+# - Werkzeug: WSGI utilities (comes with Flask, useful for file handling)
+
+onnxruntime>=1.18.0
+Flask==2.3.3
+Werkzeug==2.3.7
+
+openai-whisper==20231117
+librosa==0.10.1
+soundfile==0.12.1
+pydub==0.25.1
+jiwer==3.0.5
+datasets==2.20.0
+pandas==2.2.2
+
+pyannote.audio==3.1.1
+pyannote.metrics==3.2.1
+pyannote.core==5.0.0
+
+torch==2.0.1
+torchaudio==2.0.2
+
+numpy==1.24.3
+scipy==1.11.4
+scikit-learn==1.3.2
+
+reportlab==4.0.7
+python-docx==0.8.11
+
+python-dotenv==1.0.0
+requests==2.31.0
+
+huggingface-hub==0.20.3
+
+# INSTALLATION INSTRUCTIONS FOR WINDOWS:
+
+# 
+# 1. Open Command Prompt or PowerShell
+# 
+# 2. Create a virtual environment:
+#    python -m venv venv
+#
+# 3. Activate virtual environment:
+#    venv\Scripts\activate
+#
+# 4. Install all dependencies:
+#    pip install -r requirements.txt
+#
+# 5. (Optional) Accept Pyannote license:
+#    python -c "import huggingface_hub; huggingface_hub.hf_login()"
+#
+# NOTE: Installation may take 10-15 minutes due to large model files
+#       PyTorch is ~2GB, Whisper model ~140MB, Pyannote models ~300MB
+#
+
